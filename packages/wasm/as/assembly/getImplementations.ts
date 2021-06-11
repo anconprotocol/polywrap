@@ -17,7 +17,7 @@ export declare function __w3_get_implementations_result_item(index: u32, ptr: u3
 @external("w3", "__w3_get_implementations_error_len")
 export declare function __w3_get_implementations_error_len(): u32;
 @external("w3", "__w3_get_implementations_error")
-export declare function __w3_get_implementations_error_len(ptr: u32): void;
+export declare function __w3_get_implementations_error(ptr: u32): void;
 
 export function w3_getImplementations(uri: string): string[] {
   const uriBuf = String.UTF8.encode(uri);
@@ -29,7 +29,7 @@ export function w3_getImplementations(uri: string): string[] {
   if (!success) {
     const errorLen = __w3_get_implementations_error_len();
     const messageBuf = new ArrayBuffer(changetype<u32>(errorLen));
-    __w3_get_implementations_error_len(changetype<u32>(messageBuf));
+    __w3_get_implementations_error(changetype<u32>(messageBuf));
     const message = String.UTF8.decode(messageBuf);
     throw new Error(message);
   }
