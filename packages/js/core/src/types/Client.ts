@@ -1,6 +1,4 @@
-import { Uri, UriRedirect, QueryHandler, InvokeHandler } from "./";
+import { QueryHandler, InvokeHandler } from "./";
 
-export interface Client extends QueryHandler, InvokeHandler {
-  redirects: () => readonly UriRedirect<Uri>[];
+export interface Client extends QueryHandler, InvokeHandler {}
   getImplementations(uri: string, filters?: { applyRedirects: boolean }): string[];
-}
