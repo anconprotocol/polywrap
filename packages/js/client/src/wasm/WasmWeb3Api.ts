@@ -239,6 +239,20 @@ export class WasmWeb3Api extends Api {
                     transferPending = false;
                     break;
                   }
+                  case "GetImplementations": {
+                    const result = client.getImplementations({
+                      uri: action.uri
+                    });
+
+                    let msgpack: ArrayBuffer = MsgPack.encode(result);
+
+                    await transferData(
+                      msgpack,
+                      ThreadWakeStatus.GET_IMPLEMENTATIONS_RESULT
+                    );
+
+                    break;
+                  }
                 }
               }
             );

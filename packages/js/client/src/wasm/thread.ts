@@ -14,6 +14,7 @@ import {
 import { readBytes, readString, writeBytes, writeString } from "./utils";
 
 import { encode } from "@msgpack/msgpack";
+import * as MsgPack from "@msgpack/msgpack";
 
 interface State {
   method?: string;
@@ -25,6 +26,9 @@ interface State {
   subinvoke: {
     result?: ArrayBuffer;
     error?: string;
+  };
+  getImplementations: {
+    result?: ArrayBuffer;
   };
   threadMutexes?: Int32Array;
   threadId?: number;
@@ -219,6 +223,107 @@ const imports = (memory: WebAssembly.Memory): W3Imports => ({
       const file = readString(memory.buffer, filePtr, fileLen);
       abort(`__w3_abort: ${msg}\nFile: ${file}\nLocation: [${line},${column}]`);
     },
+    __w3_get_implementations: (
+      uriPtr: u32,
+      uriLen: u32
+    ): boolean => {
+      if (
+        state.threadId === undefined ||
+        state.threadMutexes === undefined ||
+        state.transfer === undefined
+      ) {
+        abort(
+          `__w3_get_implementations: thread uninitialized.\nthreadId: ${state.threadId}\nthreadMutexes: ${state.threadMutexes}`
+        );
+        return false;
+      }
+
+      // Reset our state
+      state.subinvoke.result = undefined;
+      state.subinvoke.error = undefined;
+
+      const uri = readString(memory.buffer, uriPtr, uriLen);
+
+      // Reset our thread's status
+      Atomics.store(state.threadMutexes, state.threadId, 0);
+
+      dispatchAction({
+        type: "GetImplementations",
+        uri
+      });
+
+      // Pause the thread
+      Atomics.wait(state.threadMutexes, state.threadId, 0);
+
+      // Get the code & reset to 0
+      const status: ThreadWakeStatus = Atomics.exchange(
+        state.threadMutexes,
+        state.threadId,
+        0
+      );
+
+      if (
+        status === ThreadWakeStatus.GET_IMPLEMENTATIONS_RESULT
+      ) {
+        let numBytes = Atomics.load(state.transfer, 0);
+        let data = new Uint8Array(numBytes);
+        let progress = 0;
+
+        while (true) {
+          const newLength = progress + numBytes;
+
+          if (data.byteLength < newLength) {
+            data = new Uint8Array(data, 0, newLength);
+          }
+
+          for (let i = 1; i <= numBytes; ++i) {
+            data[progress + (i - 1)] = Atomics.load(state.transfer, i);
+          }
+
+          progress += numBytes;
+          dispatchAction({ type: "TransferComplete" });
+
+          break;
+        }
+
+        state.subinvoke.result = data.buffer;
+        return true;
+      } else {
+        abort(`__w3_subinvoke: Unknown wake status ${status}`);
+        return false;
+      }
+      return false;
+    },
+    __w3_get_implementations_result_array_len: (): u32 => {
+      if (!state.getImplementations.result) {
+        abort("__w3_getImplementations.result: getImplementations.result is not set");
+        return 0;
+      }
+
+      const result: string[] = MsgPack.decode<string[]>(state.getImplementations.result) as string[];
+  
+      return result.length;
+    },
+    __w3_get_implementations_result_item_len: (index: u32): u32 => {
+      if (!state.getImplementations.result) {
+        abort("__w3_get_implementations_result_item_len: getImplementations.result is not set");
+        return 0;
+      }
+   
+      const result: string[] = MsgPack.decode<string[]>(state.getImplementations.result) as string[];
+      
+      return MsgPack.encode(result[index]).byteLength;
+    },
+    __w3_get_implementations_result_item: (index: u32, ptr: u32): void => {
+      if (!state.getImplementations.result) {
+        abort("__w3_get_implementations_result_item: getImplementations.result is not set");
+        return;
+      }
+
+      const result: string[] = MsgPack.decode<string[]>(state.getImplementations.result) as string[];
+
+      writeBytes(MsgPack.encode(result[index]), memory.buffer, ptr);
+    }
   },
   env: {
     memory,

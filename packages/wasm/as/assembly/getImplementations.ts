@@ -14,10 +14,10 @@ export declare function __w3_get_implementations_result_item_len(index: u32): u3
 export declare function __w3_get_implementations_result_item(index: u32, ptr: u32): void;
 
 // Get Implementations Error
-@external("w3", "__w3_get_implementations_error_len")
-export declare function __w3_get_implementations_error_len(): u32;
-@external("w3", "__w3_get_implementations_error")
-export declare function __w3_get_implementations_error(ptr: u32): void;
+// @external("w3", "__w3_get_implementations_error_len")
+// export declare function __w3_get_implementations_error_len(): u32;
+// @external("w3", "__w3_get_implementations_error")
+// export declare function __w3_get_implementations_error(ptr: u32): void;
 
 export function w3_getImplementations(uri: string): string[] {
   const uriBuf = String.UTF8.encode(uri);
@@ -26,13 +26,13 @@ export function w3_getImplementations(uri: string): string[] {
     uriBuf.byteLength
   );
 
-  if (!success) {
-    const errorLen = __w3_get_implementations_error_len();
-    const messageBuf = new ArrayBuffer(changetype<u32>(errorLen));
-    __w3_get_implementations_error(changetype<u32>(messageBuf));
-    const message = String.UTF8.decode(messageBuf);
-    throw new Error(message);
-  }
+  // if (!success) {
+  //   const errorLen = __w3_get_implementations_error_len();
+  //   const messageBuf = new ArrayBuffer(changetype<u32>(errorLen));
+  //   __w3_get_implementations_error(changetype<u32>(messageBuf));
+  //   const message = String.UTF8.decode(messageBuf);
+  //   throw new Error(message);
+  // }
 
   const arrayLen = __w3_get_implementations_result_array_len();
   const result: string[] = [];

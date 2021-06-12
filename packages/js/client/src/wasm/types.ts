@@ -44,6 +44,13 @@ export interface W3Imports {
       line: u32,
       column: u32
     ) => void;
+    __w3_get_implementations: (
+      uriPtr: u32,
+      uriLen: u32
+    ) => boolean;
+    __w3_get_implementations_result_array_len: () => u32;
+    __w3_get_implementations_result_item_len: (index: u32) => u32;
+    __w3_get_implementations_result_item: (index: u32, ptr: u32) => void;
   };
 
   env: {
@@ -55,6 +62,7 @@ export enum ThreadWakeStatus {
   SUBINVOKE_RESULT = 1,
   SUBINVOKE_ERROR = 2,
   SUBINVOKE_DONE = 3,
+  GET_IMPLEMENTATIONS_RESULT = 4,
 }
 
 // Host (main thread) actions
@@ -64,7 +72,8 @@ export type HostAction =
   | LogQueryResultAction
   | LogQueryErrorAction
   | LogInfoAction
-  | TransferCompleteAction;
+  | TransferCompleteAction
+  | GetImplementationsAction;
 
 export interface SubInvokeAction {
   readonly type: "SubInvoke";
@@ -96,4 +105,9 @@ export interface LogInfoAction {
 
 export interface TransferCompleteAction {
   readonly type: "TransferComplete";
+}
+
+export interface GetImplementationsAction {
+  readonly type: "GetImplementations";
+  readonly uri: string;
 }
