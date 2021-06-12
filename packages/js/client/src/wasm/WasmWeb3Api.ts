@@ -240,9 +240,9 @@ export class WasmWeb3Api extends Api {
                     break;
                   }
                   case "GetImplementations": {
-                    const result = client.getImplementations({
-                      uri: action.uri
-                    });
+                    const result = client.getImplementations(
+                      action.uri
+                    );
 
                     let msgpack: ArrayBuffer = MsgPack.encode(result);
 

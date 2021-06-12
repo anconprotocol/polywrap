@@ -51,7 +51,13 @@ describe("Web3API Binding Test Suite", () => {
           output.mutation.entries = sort(output.mutation.entries);
         }
 
+        try {
+
         expect(output).toMatchObject(expectedOutput);
+      }
+      catch {
+        debugger
+      }
       }
     });
   }

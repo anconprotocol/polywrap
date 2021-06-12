@@ -38,6 +38,7 @@ interface State {
 const state: State = {
   invoke: {},
   subinvoke: {},
+  getImplementations: {},
 };
 
 const abort = (message: string) => {
