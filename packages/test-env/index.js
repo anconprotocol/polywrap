@@ -69,7 +69,7 @@ async function up(quiet = false) {
     '"Version":',
     'get',
     2000,
-    60000
+    20000
   );
 
   if (!success) {
@@ -82,7 +82,7 @@ async function up(quiet = false) {
     '"jsonrpc":',
     'post',
     2000,
-    60000,
+    20000,
     '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}'
   );
 
@@ -96,7 +96,7 @@ async function up(quiet = false) {
     '"running":true',
     'get',
     2000,
-    60000
+    20000
   );
 
   if (!success) {

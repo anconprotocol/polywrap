@@ -83,6 +83,8 @@ describe("Ethereum Plugin", () => {
   describe("Query", () => {
     it("callContractView", async () => {
       const node = namehash("whatever.eth")
+      console.log('TEEEEEEEEEEEEEEEEST');
+      console.log(uri);
       const response = await client.query<{ callContractView: string }>({
         uri,
         query: `
