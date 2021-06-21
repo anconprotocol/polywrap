@@ -101,7 +101,7 @@ type Query {
 
   # Router
   swapCallParameters(
-    trade: Trade!,
+    trade: Trade!
     tradeOptions: TradeOptions!
   ): SwapParameters!
 

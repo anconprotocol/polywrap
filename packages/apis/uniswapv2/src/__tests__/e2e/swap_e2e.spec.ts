@@ -1,8 +1,8 @@
 import { buildAndDeployApi, initTestEnvironment, stopTestEnvironment } from "@web3api/test-env-js";
 import { UriRedirect, Web3ApiClient } from "@web3api/client-js";
-import { Currency, Pair, Token, Trade, TxResponse } from "./types";
+import { Currency, Pair, SwapParameters, Token, Trade, TxOverrides, TxResponse } from "./types";
 import path from "path";
-import { getRedirects, getTokenList } from "../testUtils";
+import { getPairData, getRedirects, getTokenList } from "../testUtils";
 import { Contract, ethers, providers } from "ethers";
 import erc20ABI from "./testData/erc20ABI.json";
 
@@ -375,4 +375,102 @@ describe("Swap", () => {
     await linkDaiSwapTx.wait();
     expect((await daiContract.balanceOf(recipient)).toString()).toEqual("99900000");
   });
+
+  it("Should successfully exec ether -> dai trade with tx overrides", async () => {
+    const startEth: ethers.BigNumber = await ethersProvider.getBalance(recipient);
+    const daiContract = new Contract(dai.address, erc20ABI, ethersProvider);
+    const startDai: ethers.BigNumber = await daiContract.balanceOf(recipient);
+    const ethToTrade = "1000000000000000000";
+    const ether = {
+      address: "",
+      chainId: dai.chainId,
+      currency: ethCurrency
+    }
+    const etherDaiPair = await getPairData(eth, dai, client, ensUri);
+    const txOverrides: TxOverrides = {
+      gasLimit: "200000",
+      gasPrice: "42"
+    };
+
+    const bestTradeQuery = await client.query<{bestTradeExactIn: Trade[]}>({
+      uri: ensUri,
+      query: `
+          query {
+            bestTradeExactIn (
+              pairs: $pairs
+              amountIn: $amountIn
+              tokenOut: $tokenOut
+            )
+          }
+        `,
+      variables: {
+        pairs: [etherDaiPair!],
+        amountIn: {
+          token: ether,
+          amount: ethToTrade,
+        },
+        tokenOut: dai,
+      },
+    });
+    const bestTrade = bestTradeQuery.data!.bestTradeExactIn[0];
+
+    const swapParametersQuery = await client.query<{ swapCallParameters: SwapParameters }>({
+      uri: ensUri,
+      query: `
+        query {
+          swapCallParameters(
+            trade: $trade
+            tradeOptions: $tradeOptions
+          )
+        }
+      `,
+      variables: {
+        trade: bestTrade,
+        tradeOptions: {
+          allowedSlippage: "0.1",
+          recipient: recipient,
+          unixTimestamp: parseInt((new Date().getTime() / 1000).toFixed(0)),
+          ttl: 1800
+        }
+      },
+    });
+    const swapParameters: SwapParameters = swapParametersQuery.data?.swapCallParameters!;
+
+    const etherDaiTxResponse = await client.query<{ execCall: TxResponse}>({
+      uri: ensUri,
+      query: `
+        mutation {
+          execCall (
+            parameters: $parameters
+            chainId: $chainId
+            txOverrides: $txOverrides
+          )
+        }
+      `,
+      variables: {
+        parameters: swapParameters,
+        chainId: "MAINNET",
+        txOverrides: txOverrides,
+      },
+    });
+
+    if (etherDaiTxResponse.errors) {
+      etherDaiTxResponse.errors.forEach(console.log)
+    }
+    expect(etherDaiTxResponse.errors).toBeFalsy
+
+    const txResponse: TxResponse = etherDaiTxResponse.data?.execCall!
+    const etherDaiTx = await ethersProvider.getTransaction(txResponse.hash);
+    await etherDaiTx.wait();
+
+    // swap results
+    const endEth: ethers.BigNumber = await ethersProvider.getBalance(recipient);
+    const endDai: ethers.BigNumber = await daiContract.balanceOf(recipient);
+    expect(startEth.sub(endEth).gte(ethToTrade)).toStrictEqual(true);
+    expect(endDai.sub(startDai).gt(0)).toStrictEqual(true);
+    // transaction results
+    expect(txResponse.gasLimit).toStrictEqual(txOverrides.gasLimit);
+    expect(txResponse.gasPrice).toStrictEqual(txOverrides.gasPrice);
+  });
+
 });

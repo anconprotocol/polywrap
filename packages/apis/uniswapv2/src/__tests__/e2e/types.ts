@@ -136,6 +136,6 @@ export interface StaticTxResult {
 }
 
 export interface TxOverrides {
-  gasPrice: string | null
-  gasLimit: string | null
+  gasPrice?: string
+  gasLimit?: string
 }
