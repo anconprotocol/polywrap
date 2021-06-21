@@ -193,8 +193,8 @@ export default {
       const uris: string[][] = [];
 
       // publish to IPFS
-      if (ipfsProvider) {
-        const cid = await publishToIPFS(outputDir, ipfsProvider);
+      if (ipfs) {
+        const cid = await publishToIPFS(outputDir, ipfs);
 
         print.success(`IPFS { ${cid} }`);
         uris.push(["Web3API IPFS", `ipfs://${cid}`]);
