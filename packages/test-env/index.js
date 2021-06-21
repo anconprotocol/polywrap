@@ -30,18 +30,19 @@ async function runCommand(command, quiet) {
 
 async function awaitResponse(url, expectedRes, getPost, timeout, maxTimeout, data) {
   let time = 0;
+  let result;
 
   while (time < maxTimeout) {
-    const success = await axios[getPost](url, data)
+    result = await axios[getPost](url, data)
       .then(function (response) {
         const responseData = JSON.stringify(response.data);
         return responseData.indexOf(expectedRes) > -1
       })
-      .catch(function () {
-        return false;
+      .catch(function (error) {
+        return error;
       });
 
-    if (success) {
+    if (result && result === true) {
       return true;
     }
 
@@ -52,6 +53,7 @@ async function awaitResponse(url, expectedRes, getPost, timeout, maxTimeout, dat
     time += timeout;
   }
 
+  console.error(result);
   return false;
 }
 
@@ -67,7 +69,7 @@ async function up(quiet = false) {
     '"Version":',
     'get',
     2000,
-    20000
+    60000
   );
 
   if (!success) {
@@ -80,7 +82,7 @@ async function up(quiet = false) {
     '"jsonrpc":',
     'post',
     2000,
-    20000,
+    60000,
     '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}'
   );
 
@@ -94,7 +96,7 @@ async function up(quiet = false) {
     '"running":true',
     'get',
     2000,
-    20000
+    60000
   );
 
   if (!success) {
